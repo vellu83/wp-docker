@@ -1,0 +1,68 @@
+version: '3.9'
+services:
+
+  wordpress:
+    # default port 9000 (FastCGI)
+    image: wordpress:stable-fpm
+    container_name: wp-wordpress
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ./www/html:/var/www/html
+      - ./wpconfig:/usr/local/etc/php/conf.d/uploads.ini
+      - ./wptheme:/var/www/html/wp-content/themes/myTheme
+    environment:
+      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_NAME=WpDatabase
+      - WORDPRESS_DB_USER=WpDbUser
+      - WORDPRESS_DB_PASSWORD=WpDpRootSalaine345##!!!
+  db:
+    # default port 3306
+    container_name: mariaDb
+    image: mariadb:10.1
+    env_file:
+      - .env
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=WpDatabase
+      - MYSQL_USER=WpDbUser
+      - MYSQL_PASSWORD=WpDpSalaine345##!!!
+      - MYSQL_ROOT_PASSWORD=WpDpRootSalaine345##!!!
+    volumes:
+      - .db/files:/var/lib/mysql
+    command:
+      - '--default-authentication-plugin=mysql_native_password'
+
+  nginx:
+    # default ports 80, 443 - expose mapping as needed to host
+    image: nginx:stable
+    container_name: wp-nginx
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+    ports:
+      - "8080:80"    # http
+      - "8443:443"   # https
+    volumes:
+      - ./www/html:/var/www/html
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/nginx/ssl
+
+  memcached:
+    image: memcached:stable
+    environment:
+      - MEMCACHED_CACHE_SIZE=128
+
+  # adminer - bring up only as needed - bypasses nginx
+#  adminer:
+#    # default port 8080
+#    image: adminer:4
+#    container_name: wp-adminer
+#    restart: unless-stopped
+#    networks:
+#      - wordpress
+#    depends_on:
+#      - database
+#    ports:
+#      - "9000:8080"
