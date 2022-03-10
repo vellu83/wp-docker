@@ -2,27 +2,25 @@ version: '3.9'
 services:
 
   wordpress:
-    # default port 9000 (FastCGI)
-    image: wordpress:stable-fpm
-    container_name: wp-wordpress
+    build: php7-fpm-memcached/
+    image: vellu83/wordpress:php7-fpm-memcached
+    container_name: wordpress
     restart: unless-stopped
     depends_on:
       - db
     volumes:
-      - ./www/html:/var/www/html
+      - static-content:/var/www/html:rw
       - ./wpconfig:/usr/local/etc/php/conf.d/uploads.ini
-      - ./wptheme:/var/www/html/wp-content/themes/myTheme
+      - ./wpthemes:/var/www/html/wp-content/themes/:rw
     environment:
-      - WORDPRESS_DB_HOST=db:3306
+      - WORDPRESS_DB_HOST=db
       - WORDPRESS_DB_NAME=WpDatabase
       - WORDPRESS_DB_USER=WpDbUser
-      - WORDPRESS_DB_PASSWORD=WpDpRootSalaine345##!!!
+      - WORDPRESS_DB_PASSWORD=WpDpSalaine345##!!!
   db:
     # default port 3306
     container_name: mariaDb
     image: mariadb:10.1
-    env_file:
-      - .env
     restart: unless-stopped
     environment:
       - MYSQL_DATABASE=WpDatabase
@@ -42,17 +40,36 @@ services:
     depends_on:
       - wordpress
     ports:
-      - "8080:80"    # http
-      - "8443:443"   # https
+      - '80:80'    # http
+      - '443:443'   # https
     volumes:
-      - ./www/html:/var/www/html
+      - static-content:/var/www/html
       - ./nginx/conf:/etc/nginx/conf.d
       - ./certbot/conf:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+      - ./certbot/data:/var/www/certbot
+      - ./wpthemes:/var/www/html/wp-content/themes/
 
   memcached:
-    image: memcached:stable
+    container_name: memcached
+    image: memcached:latest
     environment:
       - MEMCACHED_CACHE_SIZE=128
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot:latest
+    command: certonly --webroot --webroot-path=/var/www/certbot --agree-tos -d dev.vellu.info -m velimatti.remander@gmail.com
+    depends_on:
+      - nginx
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/logs:/var/log/letsencrypt
+      - ./certbot/data:/var/www/certbot:rw
+
+volumes:
+  static-content:
+
 
   # adminer - bring up only as needed - bypasses nginx
 #  adminer:

@@ -1,0 +1,7 @@
+db
+db/
+.db/
+nginx
+wpconfig
+certbot
+

@@ -1,0 +1,27 @@
+version: '3.9'
+
+services: 
+
+  nginx:  
+    image: nginx:stable
+    container_name: wp-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"   
+    volumes:
+      - ./www/html:/var/www/html
+      - ./nginx/tempconf:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+      - ./certbot/data:/var/www/certbot
+
+  certbot:
+    container_name: certbot
+    image: certbot/certbot:latest
+    command: certonly --webroot --webroot-path=/var/www/certbot --agree-tos -d dev.vellu.info -m velimatti.remander@gmail.com
+    depends_on:
+      - nginx
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/logs:/var/log/letsencrypt
+      - ./certbot/data:/var/www/certbot:rw
