@@ -1,11 +1,16 @@
 FROM wordpress:5.9-php8.1-fpm
+<<<<<<< HEAD:wp-php8.1-fpm-memcached/Dockerfile
 COPY ./php.ini /usr/local/etc/php/php.ini
+=======
+COPY ./php.ini-production /usr/local/etc/php/php.ini
+>>>>>>> 63d6f6e3d77575dad665cf44fc9684651daed571:php7-fpm-memcached/Dockerfile
 
 RUN apt-get update
 RUN apt-get install --no-install-recommends -y tidy csstidy nano netcat 
 
 RUN mkdir -p /usr/src/php/ext
 
+<<<<<<< HEAD:wp-php8.1-fpm-memcached/Dockerfile
 
 # install ssmtp
 RUN apt-get install -y ssmtp && \
@@ -19,6 +24,29 @@ RUN echo 'sendmail_path = "/usr/sbin/ssmtp -t -i"' > /usr/local/etc/php/conf.d/m
 
 #https://secure.php.net/manual/en/opcache.installation.php
 
+=======
+
+# install ssmtp
+RUN apt-get install -y ssmtp && \
+    apt-get clean
+
+# SSMTP settings
+COPY ssmtp.conf /etc/ssmtp/ssmtp.conf
+# PHP mail settings
+RUN echo 'sendmail_path = "/usr/sbin/ssmtp -t -i"' > /usr/local/etc/php/conf.d/mail.ini
+
+
+# Install memcached
+
+RUN apt-get install -y libpq-dev libmemcached-dev zlib1g-dev && \
+    curl -o memcached.tgz -SL https://pecl.php.net/get/memcache-8.0.tgz && \
+        tar -xf memcached.tgz -C /usr/src/php/ext/ && \
+        echo 'extension=memcached.so' >> /usr/local/etc/php/conf.d/memcached.ini && \
+        rm memcached.tgz && \
+        mv /usr/src/php/ext/memcache-8.0 /usr/src/php/ext/memcached
+
+# see https://secure.php.net/manual/en/opcache.installation.php
+>>>>>>> 63d6f6e3d77575dad665cf44fc9684651daed571:php7-fpm-memcached/Dockerfile
 RUN { \
         echo 'opcache.memory_consumption=128'; \
         echo 'opcache.interned_strings_buffer=8'; \
