@@ -2,7 +2,7 @@ version: '3.9'
 services:
 
   wordpress:
-    build: php7-fpm-memcached/
+    build: wp-php8.1-fpm-memcached/
     image: vellu83/wordpress:php7-fpm-memcached
     container_name: wordpress
     restart: unless-stopped
@@ -33,7 +33,6 @@ services:
       - '--default-authentication-plugin=mysql_native_password'
 
   nginx:
-    # default ports 80, 443 - expose mapping as needed to host
     image: nginx:stable
     container_name: wp-nginx
     restart: unless-stopped
@@ -70,16 +69,3 @@ services:
 volumes:
   static-content:
 
-
-  # adminer - bring up only as needed - bypasses nginx
-#  adminer:
-#    # default port 8080
-#    image: adminer:4
-#    container_name: wp-adminer
-#    restart: unless-stopped
-#    networks:
-#      - wordpress
-#    depends_on:
-#      - database
-#    ports:
-#      - "9000:8080"
