@@ -1,5 +1,4 @@
 FROM wordpress:5.9-php8.1-fpm
-COPY ./php.ini-production /usr/local/etc/php/php.ini-production 
 COPY ./php.ini-production /usr/local/etc/php/php.ini
 
 RUN apt-get update
@@ -7,8 +6,19 @@ RUN apt-get install --no-install-recommends -y tidy csstidy nano netcat
 
 RUN mkdir -p /usr/src/php/ext
 
-# Install needed php extensions: memcached
-#
+
+# install ssmtp
+RUN apt-get install -y ssmtp && \
+    apt-get clean
+
+# SSMTP settings
+COPY ssmtp.conf /etc/ssmtp/ssmtp.conf
+# PHP mail settings
+RUN echo 'sendmail_path = "/usr/sbin/ssmtp -t -i"' > /usr/local/etc/php/conf.d/mail.ini
+
+
+# Install memcached
+
 RUN apt-get install -y libpq-dev libmemcached-dev zlib1g-dev && \
     curl -o memcached.tgz -SL https://pecl.php.net/get/memcache-8.0.tgz && \
         tar -xf memcached.tgz -C /usr/src/php/ext/ && \
@@ -16,7 +26,6 @@ RUN apt-get install -y libpq-dev libmemcached-dev zlib1g-dev && \
         rm memcached.tgz && \
         mv /usr/src/php/ext/memcache-8.0 /usr/src/php/ext/memcached
 
-# set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
         echo 'opcache.memory_consumption=128'; \
