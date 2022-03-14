@@ -86,6 +86,14 @@ RUN cd /usr/src/wordpress/wp-content/plugins && \
     unzip -o w3-total-cache.2.2.1.zip && \
     chown -R www-data:www-data w3-total-cache && \
     rm -f w3-total-cache.2.2.1.zip
+# Install Webp converter
+
+RUN cd /usr/src/wordpress/wp-content/plugins && \
+    curl -o webp-converter-for-media.4.2.4.zip -L https://downloads.wordpress.org/plugin/webp-converter-for-media.4.2.4.zip && \
+    unzip -o webp-converter-for-media.4.2.4.zip && \
+    chown -R www-data:www-data webp-converter-for-media && \
+    rm -f w3-total-cache.2.2.1.zip
+
 
 # Enable Wordpress Caching
 RUN cd /usr/src/wordpress && ls -l && \
