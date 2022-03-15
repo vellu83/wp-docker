@@ -14,21 +14,22 @@ RUN apt-get install -y ssmtp && \
     apt-get clean
 
 # SSMTP settings
-COPY ssmtp.conf /etc/ssmtp/ssmtp.conf
+RUN {echo 'root='${ADMIN_EMAIL}; \
+echo 'mailhub='${SMTP_SERVER}; \
+echo 'rewriteDomain='${EMAIL_REWRITE_DOMAIN};\
+echo 'hostname='${SITE_DOMAIN};\
+echo 'TLS_CA_FILE=/etc/ssl/certs/ca-certificates.crt';\
+echo 'UseTLS=Yes';\
+echo 'AuthUser='${SMTP_USERNAME};\
+echo 'AuthPass='${SMTP_PASSWORD};\
+echo 'AuthMethod=LOGIN';\
+echo 'UseSTARTTLS=Yes';\
+ecgo 'FromLineOverride=yes';\
+} > /etc/ssmtp/ssmtp.conf
 
 # PHP mail settings
 RUN echo 'sendmail_path = "/usr/sbin/ssmtp -t -i"' > /usr/local/etc/php/conf.d/mail.ini
 
-
-
-# install ssmtp
-RUN apt-get install -y ssmtp && \
-    apt-get clean
-
-# SSMTP settings
-COPY ssmtp.conf /etc/ssmtp/ssmtp.conf
-# PHP mail settings
-RUN echo 'sendmail_path = "/usr/sbin/ssmtp -t -i"' > /usr/local/etc/php/conf.d/mail.ini
 
 
 # Install memcached

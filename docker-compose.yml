@@ -13,20 +13,21 @@ services:
       - ./wpconfig:/usr/local/etc/php/conf.d/uploads.ini
       - ./wpthemes:/var/www/html/wp-content/themes/:rw
     environment:
-      - WORDPRESS_DB_HOST=db
-      - WORDPRESS_DB_NAME=WpDatabase
-      - WORDPRESS_DB_USER=WpDbUser
-      - WORDPRESS_DB_PASSWORD=WpDpSalaine345##!!!
+      - WORDPRESS_DB_HOST
+      - WORDPRESS_DB_NAME
+      - WORDPRESS_DB_USER
+      - WORDPRESS_DB_PASSWORD
   db:
     # default port 3306
     container_name: mariaDb
     image: mariadb:10.1
     restart: unless-stopped
     environment:
-      - MYSQL_DATABASE=WpDatabase
-      - MYSQL_USER=WpDbUser
-      - MYSQL_PASSWORD=WpDpSalaine345##!!!
-      - MYSQL_ROOT_PASSWORD=WpDpRootSalaine345##!!!
+      - MYSQL_DATABASE=${WORDPRESS_DB_NAME}
+      - MYSQL_USER=${WORDPRESS_DB_USER}
+      - MYSQL_PASSWORD=${WORDPRESS_DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD
+
     volumes:
       - .db/files:/var/lib/mysql
     command:
@@ -43,7 +44,7 @@ services:
       - '443:443'   # https
     volumes:
       - static-content:/var/www/html
-      - ./nginx/conf:/etc/nginx/conf.d
+      - ./nginxconf:/etc/nginx/templates
       - ./certbot/conf:/etc/nginx/ssl
       - ./nginx/logs:/var/log/nginx
       - ./certbot/data:/var/www/certbot
@@ -58,7 +59,7 @@ services:
   certbot:
     container_name: certbot
     image: certbot/certbot:latest
-    command: certonly --webroot --webroot-path=/var/www/certbot --agree-tos -d dev.vellu.info -m velimatti.remander@gmail.com
+    command: certonly --webroot --webroot-path=/var/www/certbot --agree-tos -d ${SITE_DOMAIN} -m ${ADMIN_EMAIL}
     depends_on:
       - nginx
     volumes:

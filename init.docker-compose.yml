@@ -9,8 +9,8 @@ services:
     ports:
       - "80:80"   
     volumes:
+      - ./tempnginx:/etc/nginx/templates
       - ./www/html:/var/www/html
-      - ./nginx/tempconf:/etc/nginx/conf.d
       - ./certbot/conf:/etc/nginx/ssl
       - ./nginx/logs:/var/log/nginx
       - ./certbot/data:/var/www/certbot
@@ -18,7 +18,7 @@ services:
   certbot:
     container_name: certbot
     image: certbot/certbot:latest
-    command: certonly --webroot --webroot-path=/var/www/certbot --agree-tos -d dev.vellu.info -m velimatti.remander@gmail.com
+    command: certonly --webroot --webroot-path=/var/www/certbot --agree-tos -d ${SITE_DOMAIN} -m ${ADMIN_EMAIL}
     depends_on:
       - nginx
     volumes:
