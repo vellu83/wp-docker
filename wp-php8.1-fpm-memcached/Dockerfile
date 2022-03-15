@@ -14,17 +14,18 @@ RUN apt-get install -y ssmtp && \
     apt-get clean
 
 # SSMTP settings
-RUN {echo 'root='${ADMIN_EMAIL}; \
+RUN { \
+echo 'root='${ADMIN_EMAIL}; \
 echo 'mailhub='${SMTP_SERVER}; \
-echo 'rewriteDomain='${EMAIL_REWRITE_DOMAIN};\
-echo 'hostname='${SITE_DOMAIN};\
-echo 'TLS_CA_FILE=/etc/ssl/certs/ca-certificates.crt';\
-echo 'UseTLS=Yes';\
-echo 'AuthUser='${SMTP_USERNAME};\
-echo 'AuthPass='${SMTP_PASSWORD};\
-echo 'AuthMethod=LOGIN';\
-echo 'UseSTARTTLS=Yes';\
-ecgo 'FromLineOverride=yes';\
+echo 'rewriteDomain='${EMAIL_REWRITE_DOMAIN}; \
+echo 'hostname='${SITE_DOMAIN}; \
+echo 'TLS_CA_FILE=/etc/ssl/certs/ca-certificates.crt'; \
+echo 'UseTLS=Yes'; \
+echo 'AuthUser='${SMTP_USERNAME}; \
+echo 'AuthPass='${SMTP_PASSWORD}; \
+echo 'AuthMethod=LOGIN'; \
+echo 'UseSTARTTLS=Yes'; \
+echo 'FromLineOverride=yes'; \
 } > /etc/ssmtp/ssmtp.conf
 
 # PHP mail settings

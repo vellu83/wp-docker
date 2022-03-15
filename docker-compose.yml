@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.3'
 services:
 
   wordpress:
@@ -39,6 +39,8 @@ services:
     restart: unless-stopped
     depends_on:
       - wordpress
+    environment:
+      - SITE_DOMAIN
     ports:
       - '80:80'    # http
       - '443:443'   # https
