@@ -1,0 +1,188 @@
+fastcgi_cache_path /var/run/nginx-cache levels=1:2 keys_zone=WORDPRESS:100m inactive=60m max_size=70m;
+fastcgi_cache_key "$scheme$request_method$host$request_uri";
+fastcgi_ignore_headers Cache-Control Expires Set-Cookie;
+
+map $http_accept $load_avif {
+	~image/avif "/wp-content/uploads-webpc/$path.$ext.avif";
+}
+map $http_accept $load_webp {
+	~image/webp "/wp-content/uploads-webpc/$path.$ext.webp";
+}
+
+
+
+# redirect to HTTPS
+server {
+	client_max_body_size 10M;
+	listen 80;
+	listen [::]:80;
+	server_name ${SITE_DOMAIN};
+
+	location /.well-known/acme-challenge/ {
+		allow all;
+		root /var/www/certbot;
+	}
+
+	location /health/ {
+		return 200 'server up';
+		add_header Content-Type text/plain;
+	}
+
+
+	location / {
+# update port as needed for host mapped https
+		return 301 ${SITE_DOMAIN}$request_uri;
+	}
+}  
+
+server {
+	listen 443 ssl http2; 
+	listen [::]:443 ssl http2;
+	server_name ${SITE_DOMAIN}; 
+	index index.php index.html index.htm;
+	root /var/www/html;
+	client_max_body_size 75M;
+
+	ssl_certificate     /etc/nginx/ssl/live/${SITE_DOMAIN}/fullchain.pem;
+	ssl_certificate_key /etc/nginx/ssl/live/${SITE_DOMAIN}/privkey.pem;
+# logging
+	access_log /var/log/nginx/wordpress.access.log;
+	error_log  /var/log/nginx/wordpress.error.log;
+
+
+	location /health/ {
+		return 200 'server up';
+		add_header Content-Type text/plain;
+	}
+
+
+	location / {
+		try_files $uri $uri/ /index.php$is_args$args;
+	}
+
+	set $skip_cache 0;
+
+# POST requests and urls with a query string should always go to PHP
+	if ($request_method = POST) {
+		set $skip_cache 1;
+	}   
+	if ($query_string != "") {
+		set $skip_cache 1;
+	}   
+
+# Don't cache uris containing the following segments
+	if ($request_uri ~* "/wp-admin/|/xmlrpc.php|wp-.*.php|/feed/|index.php|sitemap(_index)?.xml") {
+		set $skip_cache 1;
+	}   
+
+# Don't use the cache for logged in users or recent commenters
+	if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
+		set $skip_cache 1;
+	}
+
+	location ~ [^/]\.php(/|$) {
+		try_files $uri = 404;
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+		if (!-f $document_root$fastcgi_script_name) {
+			return 404;
+		}
+
+		include fastcgi_params;
+		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		fastcgi_param PATH_INFO $fastcgi_path_info;
+
+		fastcgi_pass wordpress:9000;
+		fastcgi_index index.php;
+		fastcgi_cache_bypass $skip_cache;
+		fastcgi_no_cache $skip_cache;
+		fastcgi_cache WORDPRESS;
+		fastcgi_cache_valid  60m;
+
+		add_header X-FastCGI-Cache $upstream_cache_status;
+
+	}
+
+#    location ~ /purge(/.*) {
+#        fastcgi_cache_purge WORDPRESS "$scheme$request_method$host$1";
+#   }
+
+
+# convert jpgs to webp
+	location ~ /wp-content/(?<path>.+)\.(?<ext>jpe?g|png|gif)$ {
+		add_header Vary Accept;
+		add_header Cache-Control "private" always;
+		expires max;
+		try_files $load_avif $load_webp $uri =404;
+	}
+
+	location ~* ^.+\.(ogg|ogv|svg|svgz|eot|otf|woff|mp4|ttf|rss|atom|jpg|jpeg|gif|png|ico|zip|tgz|gz|rar|bz2|doc|xls|exe|ppt|tar|mid|midi|wav|bmp|rtf)$ {
+		access_log off; log_not_found off; expires max;
+	}
+#browser cache .js, .css, .woff2 files
+	location ~* ^.+\.(js|css|woff2)$ {
+		expires max;
+	}
+
+
+	location = /favicon.ico {
+		log_not_found off; access_log off;
+	}
+
+	location = /favicon.svg {
+		log_not_found off; access_log off;
+	}
+
+	location = /robots.txt {
+		log_not_found off; access_log off; allow all;
+	}
+
+
+}
+gzip on;
+
+# Disable Gzip on IE6.
+gzip_disable "msie6";
+
+# Allow proxies to cache both compressed and regular version of file.
+# Avoids clients that don't support Gzip outputting gibberish.
+gzip_vary on;
+
+# Compress data, even when the client connects through a proxy.
+gzip_proxied any;
+
+# The level of compression to apply to files. A higher compression level increases
+# CPU usage. Level 5 is a happy medium resulting in roughly 75% compression.
+gzip_comp_level 5;
+
+# The minimum HTTP version of a request to perform compression.
+gzip_http_version 1.1;
+
+# Don't compress files smaller than 256 bytes, as size reduction will be negligible.
+gzip_min_length 256;
+
+# Compress the following MIME types.
+gzip_types
+application/atom+xml
+application/javascript
+application/json
+application/ld+json
+application/manifest+json
+application/rss+xml
+application/vnd.geo+json
+application/vnd.ms-fontobject
+application/x-font-ttf
+application/x-web-app-manifest+json
+application/xhtml+xml
+application/xml
+font/opentype
+image/bmp
+image/svg+xml
+image/x-icon
+text/cache-manifest
+text/css
+text/plain
+text/vcard
+text/vnd.rim.location.xloc
+text/vtt
+text/x-component
+text/x-cross-domain-policy;

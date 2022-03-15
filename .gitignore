@@ -1,7 +1,11 @@
 db
 db/
 .db/
+.env
 nginx
 wpconfig
+certbot
+wpthemes
+www
 certbot
 
